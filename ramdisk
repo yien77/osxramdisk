@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# Ramdisk Settings
+VOLNAME='Ramdisk' # name of mount point
+VOLSIZE=2048      # size in MB (integer only), 1G=1024 1.5G=1536 2G=2048
+LOGFILE="$HOME/Documents/ramdisk.log"
+
+DIR_VOLUME="/Volumes/${VOLNAME}"
+DIR_SYSCACHE="${DIR_VOLUME}/SystemCache"
+DIR_USERCACHE="${DIR_VOLUME}/${USER}"
+DIR_SYSTMP="${DIR_VOLUME}/tmp"
+
+# Create log file
+if [ ! -e $LOGFILE ]; then
+	touch $LOGFILE
+fi
+
+# 配置 Ramdisk
+# (Create Ramdisk)
+if [ -e ${DIR_VOLUME} ]; then
+	echo "[`date '+%F %T'`] Ramdisk has been mounted." >> $LOGFILE
+else
+	echo "[`date '+%F %T'`] Create Ramdisk." >> $LOGFILE
+	SECTORS=$(($VOLSIZE*2*1024))
+	DEVNAME=`hdiutil attach -nomount ram://$SECTORS`
+	echo "[`date '+%F %T'`] Device name: $DEVNAME" >> $LOGFILE
+	echo "[`date '+%F %T'`] Run diskutil" >> $LOGFILE
+	diskutil erasevolume HFS+ $VOLNAME $DEVNAME >> $LOGFILE
+fi
+
+# 產生使用者快取目錄
+# (Switch user cache to Ramdisk)
+if [ -e ${DIR_USERCACHE} ]; then
+	echo "[`date '+%F %T'`] User cache directory has been created." >> $LOGFILE
+else
+	echo "[`date '+%F %T'`] Create user cache directory." >> $LOGFILE
+	mkdir ${DIR_USERCACHE}
+fi
+
+# 產生系統快取目錄
+# (Switch system cache to Ramdisk)
+if [ -e ${DIR_SYSCACHE} ]; then
+	echo "[`date '+%F %T'`] User cache directory has been created." >> $LOGFILE
+else
+	echo "[`date '+%F %T'`] Create user cache directory." >> $LOGFILE
+	mkdir ${DIR_SYSCACHE}
+	chmod 777 ${DIR_SYSCACHE}
+fi
+
+# 產生系統暫存目錄
+# (/tmp directory)
+if [ -e ${DIR_SYSTMP} ]; then
+	echo "[`date '+%F %T'`] User cache directory has been created." >> $LOGFILE
+else
+	echo "[`date '+%F %T'`] Create user cache directory." >> $LOGFILE
+	mkdir ${DIR_SYSTMP}
+	chmod 777 ${DIR_SYSTMP}
+fi
+
+# 這些切換連結要改為 ramdisk_init
+# 這個最好使用者自己做
+#if [ -L ~/Library/Caches ]; then
+#	echo "[`date '+%F %T'`] User cache has been linked to Ramdisk." >> $LOGFILE
+#else
+#	echo "[`date '+%F %T'`] User cache link to ramdisk." >> $LOGFILE
+	# mv must be run as root in OSX 10.8
+#	mv ~/Library/Caches ~/Library/Caches.harddisk
+#	ln -s /Volumes/RamDisk/$USER ~/Library/Caches
+#fi
